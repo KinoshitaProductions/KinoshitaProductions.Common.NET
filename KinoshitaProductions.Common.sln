@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KinoshitaProductions.Common", "KinoshitaProductions.Common.csproj", "{D71891E2-0F7E-4C74-B784-F30BC578BAFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KinoshitaProductions.Common.UWP", "KinoshitaProductions.Common.UWP.csproj", "{8A5FE78F-0BF1-406B-8CCA-8438A1F0CB74}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D71891E2-0F7E-4C74-B784-F30BC578BAFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D71891E2-0F7E-4C74-B784-F30BC578BAFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D71891E2-0F7E-4C74-B784-F30BC578BAFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D71891E2-0F7E-4C74-B784-F30BC578BAFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A5FE78F-0BF1-406B-8CCA-8438A1F0CB74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A5FE78F-0BF1-406B-8CCA-8438A1F0CB74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A5FE78F-0BF1-406B-8CCA-8438A1F0CB74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A5FE78F-0BF1-406B-8CCA-8438A1F0CB74}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B8D8F6AB-603C-4FA5-883F-7A2582CF62BD}
+	EndGlobalSection
+EndGlobal

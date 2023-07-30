@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net7.0;net7.0-android</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(OS)' == 'Windows_NT' ">$(TargetFrameworks);net7.0-windows10.0.17763;</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>KinoshitaProductions.Common</PackageId>
+    <AssemblyName>KinoshitaProductions.Common</AssemblyName>
+    <RootNamespace>KinoshitaProductions.Common</RootNamespace>
+    <Authors>Kinoshita Shimizu</Authors>
+    <Company>Kinoshita Productions</Company>
+    <PackageDescription>This is our core functions library.
+    
+It simplifies many app operations, to ensure that everything will execute as expected without worrying the developer about them.</PackageDescription>
+    <RepositoryUrl>https://github.com/KinoshitaProductions/KinoshitaProductions.Common.NET</RepositoryUrl>
+    <LangVersion>10</LangVersion>
+  </PropertyGroup>
+
+  <ImportGroup Condition=" $(TargetFramework.EndsWith('-android')) ">
+    <Import Project="KinoshitaProductions.Common.Android.props" />
+  </ImportGroup>
+  <ImportGroup Condition=" $(TargetFramework.Contains('-windows')) ">
+	  <Import Project="KinoshitaProductions.Common.Windows.props" />
+  </ImportGroup>
+  <ImportGroup Condition=" $(TargetFramework) != 'netstandard2.0' ">
+	  <Import Project="KinoshitaProductions.Common.NotNetStandard.props" />
+  </ImportGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Serilog" Version="2.12.0" />
+  </ItemGroup>
+  
+</Project>
