@@ -11,3 +11,4 @@ Cache
 *.Cache
 sonarlint/
 sonarlint-state.xml
+.idea/.idea.KinoshitaProductions.Common/.idea/deploymentTargetDropDown.xml

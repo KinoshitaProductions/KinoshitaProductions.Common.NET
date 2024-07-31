@@ -1,4 +1,5 @@
 ﻿// ReSharper disable MemberCanBePrivate.Global
+
 namespace KinoshitaProductions.Common.Services;
 
 using Newtonsoft.Json;
@@ -11,12 +12,17 @@ public static class SettingsManager
         var json = JsonConvert.SerializeObject(settings);
 
         // would be nice to make this more efficient, by using a IChangeTimestampTracker that triggers when setting properties in an ObservableObject
-        var settingsJson = ElementCacheDict<string, string>.GetSharedElement((!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) + "Settings.json");
+        var settingsJson = ElementCacheDict<string, string>.GetSharedElement(
+            (!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) + "Settings.json");
 
         if (settingsJson == null || string.CompareOrdinal(settingsJson, json) != 0)
         {
-            ElementCacheDict<string, string>.StoreSharedElement((!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) + "Settings.json", json);
-            await FileManager.CreateFileAsyncSafe(AppFolder.Settings, (!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) + "Settings.json", System.Text.Encoding.UTF8.GetBytes(json));
+            ElementCacheDict<string, string>.StoreSharedElement(
+                (!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) +
+                "Settings.json", json);
+            await FileManager.CreateFileAsyncSafe(AppFolder.Settings,
+                (!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) +
+                "Settings.json", System.Text.Encoding.UTF8.GetBytes(json));
         }
     }
 
@@ -24,13 +30,17 @@ public static class SettingsManager
     {
         try
         {
-            var json = await FileManager.ReadFileToStringAsync(AppFolder.Settings, (!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) + "Settings.json");
+            var json = await FileManager.ReadFileToStringAsync(AppFolder.Settings,
+                (!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) +
+                "Settings.json");
             if (json != null)
             {
                 var settings = JsonConvert.DeserializeObject<T>(json);
                 if (settings != null)
                 {
-                    ElementCacheDict<string, string>.StoreSharedElement((!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) + "Settings.json", json);
+                    ElementCacheDict<string, string>.StoreSharedElement(
+                        (!string.IsNullOrWhiteSpace(path) ? path + Path.DirectorySeparatorChar : string.Empty) +
+                        "Settings.json", json);
                     return settings;
                 }
             }
@@ -40,6 +50,7 @@ public static class SettingsManager
             //NOT CRITICAL, IT'S A NORMAL ERROR
             Log.Debug(ex, "Failed to load settings, returning initial instead");
         }
+
         return new T();
     }
 
@@ -59,7 +70,9 @@ public static class SettingsManager
         else
             return FilePresence.NotFound;
     }
-    public static Task<FilePresence> ExistsAsync(string relativePathAndFileName) => ExistsAsync(AppFolder.Settings, relativePathAndFileName);
+
+    public static Task<FilePresence> ExistsAsync(string relativePathAndFileName) =>
+        ExistsAsync(AppFolder.Settings, relativePathAndFileName);
 
     public static async Task DeleteAsync(AppFolder appFolder, string relativePathAndFileName, FilePresence filePresence)
     {
@@ -74,7 +87,9 @@ public static class SettingsManager
                 break;
         }
     }
-    public static Task DeleteAsync(string relativePathAndFileName, FilePresence filePresence) => DeleteAsync(AppFolder.Settings, relativePathAndFileName, filePresence);
+
+    public static Task DeleteAsync(string relativePathAndFileName, FilePresence filePresence) =>
+        DeleteAsync(AppFolder.Settings, relativePathAndFileName, filePresence);
 
     public static async Task ForceDeleteAsync(AppFolder appFolder, string relativePathAndFileName)
     {
@@ -83,8 +98,10 @@ public static class SettingsManager
         if (await FileManager.ExistsAsync(appFolder, $"{relativePathAndFileName}.bak").ConfigureAwait(false))
             await FileManager.DeleteAsync(appFolder, $"{relativePathAndFileName}.bak").ConfigureAwait(false);
     }
-    public static Task ForceDeleteAsync(string relativePathAndFileName) => ForceDeleteAsync(AppFolder.Settings, relativePathAndFileName);
-    
+
+    public static Task ForceDeleteAsync(string relativePathAndFileName) =>
+        ForceDeleteAsync(AppFolder.Settings, relativePathAndFileName);
+
     /// <summary>
     /// Reads an IStatefulJson object of type <typeparamref name="T"/>, from the specified folder according to the <seealso cref="FilePresence"/> provided. If successfully read, it'll fill in the StateJson property.
     /// </summary>
@@ -94,27 +111,33 @@ public static class SettingsManager
     /// <param name="filePresence"></param>
     /// <param name="compressionAlgorithm"></param>
     /// <returns></returns>
-    public static async Task<T?> TryLoadingStatefulAsJson<T>(AppFolder appFolder, string relativePathAndFileName, FilePresence filePresence, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, IStatefulAsJson, new()
+    public static async Task<T?> TryLoadingStatefulAsJson<T>(AppFolder appFolder, string relativePathAndFileName,
+        FilePresence filePresence, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
+        where T : class, IStatefulAsJson, new()
     {
         if (filePresence == FilePresence.NotFound)
         {
             Log.Debug($"Attempted to load a non existing file from {appFolder}/{relativePathAndFileName}");
             return null;
         }
+
         if (filePresence == FilePresence.BackupFound)
         {
             relativePathAndFileName += ".bak";
         }
+
         try
         {
 #if NET7_0_OR_GREATER
             await
 #endif
-            using var stream = await FileManager.ReadFileToStreamAsync(appFolder, relativePathAndFileName).ConfigureAwait(false);
+                using var stream = await FileManager.ReadFileToStreamAsync(appFolder, relativePathAndFileName)
+                    .ConfigureAwait(false);
             if (stream == null)
             {
                 return null;
             }
+
             switch (compressionAlgorithm)
             {
                 case CompressionAlgorithm.None:
@@ -128,13 +151,16 @@ public static class SettingsManager
 
                     break;
                 default:
-                    json = await StreamHelper.ReadFullyAsStringAsync(Compression.GetDecompressionStreamFor(stream, compressionAlgorithm)).ConfigureAwait(false);
+                    json = await StreamHelper
+                        .ReadFullyAsStringAsync(Compression.GetDecompressionStreamFor(stream, compressionAlgorithm))
+                        .ConfigureAwait(false);
                     @object = JsonConvert.DeserializeObject<T>(json);
                     if (@object != null)
                     {
                         @object.StateJson = json;
                         return @object;
                     }
+
                     break;
             }
 
@@ -147,10 +173,13 @@ public static class SettingsManager
         }
     }
 
-    public static Task<T?> TryLoadingStatefulAsJson<T>(string relativePathAndFileName, FilePresence filePresence, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, IStatefulAsJson, new()
+    public static Task<T?> TryLoadingStatefulAsJson<T>(string relativePathAndFileName, FilePresence filePresence,
+        CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, IStatefulAsJson, new()
         => TryLoadingStatefulAsJson<T>(AppFolder.Settings, relativePathAndFileName, filePresence, compressionAlgorithm);
 
-    public static async Task<T?> TryLoadingJson<T>(AppFolder appFolder, string relativePathAndFileName, FilePresence filePresence, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, new()
+    public static async Task<T?> TryLoadingJson<T>(AppFolder appFolder, string relativePathAndFileName,
+        FilePresence filePresence, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
+        where T : class, new()
     {
         if (filePresence == FilePresence.NotFound)
         {
@@ -165,9 +194,10 @@ public static class SettingsManager
         try
         {
 #if NET7_0_OR_GREATER
-            await 
+            await
 #endif
-            using var stream = await FileManager.ReadFileToStreamAsync(appFolder, relativePathAndFileName).ConfigureAwait(false);
+                using var stream = await FileManager.ReadFileToStreamAsync(appFolder, relativePathAndFileName)
+                    .ConfigureAwait(false);
             if (stream == null)
                 return null;
             switch (compressionAlgorithm)
@@ -177,7 +207,9 @@ public static class SettingsManager
                     var @object = JsonConvert.DeserializeObject<T>(json);
                     return @object;
                 default:
-                    json = await StreamHelper.ReadFullyAsStringAsync(Compression.GetDecompressionStreamFor(stream, compressionAlgorithm)).ConfigureAwait(false);
+                    json = await StreamHelper
+                        .ReadFullyAsStringAsync(Compression.GetDecompressionStreamFor(stream, compressionAlgorithm))
+                        .ConfigureAwait(false);
                     @object = JsonConvert.DeserializeObject<T>(json);
                     return @object;
             }
@@ -189,7 +221,8 @@ public static class SettingsManager
         }
     }
 
-    public static Task<T?> TryLoadingJson<T>(string relativePathAndFileName, FilePresence filePresence, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, new()
+    public static Task<T?> TryLoadingJson<T>(string relativePathAndFileName, FilePresence filePresence,
+        CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, new()
         => TryLoadingJson<T>(AppFolder.Settings, relativePathAndFileName, filePresence, compressionAlgorithm);
 
     /// <summary>
@@ -197,108 +230,123 @@ public static class SettingsManager
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="objectToSave"></param>
-    /// <param name="json"></param>
     /// <returns></returns>
-    public static bool TrySavingLockedStatefulAsJsonStep1<T>(T objectToSave, out string json) where T : class, IStatefulAsJson, new()
+    public static (bool Success, bool ChangesDetected, string? json)
+        TrySavingLockedStatefulAsJsonStep1<T>(T objectToSave) where T : class, IStatefulAsJson, new()
     {
-        json = JsonConvert.SerializeObject(objectToSave);
-
-        if (objectToSave.StateJson == null || string.CompareOrdinal(objectToSave.StateJson, json) != 0)
-        {
-            return true;
-        }
-        else
-        {
-            // do nothing, file hasn't changed so it would only waste IOPS
-        }
-        return false;
-    }
-
-    public static async Task TrySavingLockedStatefulAsJsonStep2<T>(T objectToSave, string json, AppFolder appFolder, string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, IStatefulAsJson, new()
-    {
-        objectToSave.StateJson = json;
-
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-
-        await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm).ConfigureAwait(false);
-    }
-    
-    public static async Task<bool> TrySavingStatefulAsJson<T>(T objectToSave, AppFolder appFolder, string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, IStatefulAsJson, new()
-    {
-        try 
+        try
         {
             var json = JsonConvert.SerializeObject(objectToSave);
+            return (true, objectToSave.StateJson == null || string.CompareOrdinal(objectToSave.StateJson, json) != 0,
+                json);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to serialize state");
+        }
 
-            if (objectToSave.StateJson == null || string.CompareOrdinal(objectToSave.StateJson, json) != 0)
-            {
-                objectToSave.StateJson = json;
+        return (false, false, null);
+    }
 
-                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-
-                await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm).ConfigureAwait(false);
-            }
-            else
-            {
-                // do nothing, file hasn't changed so it would only waste IOPS
-            }
+    public static async Task<bool> TrySavingLockedStatefulAsJsonStep2<T>(T objectToSave, string json,
+        AppFolder appFolder, string relativePathAndFileName,
+        CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, IStatefulAsJson, new()
+    {
+        try
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm);
+            objectToSave.StateJson = json;
             return true;
         }
         catch (Exception ex)
         {
             Log.Debug(ex, "Failed to save file");
         }
+
         return false;
     }
 
-    public static async Task<bool> TrySavingStatefulAsJsonWithTimestamp<T>(T objectToSave, AppFolder appFolder, string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None, bool forceTimestampUpdate = false) where T : class, IStatefulAsJsonWithTimestamp, new()
+    public static async Task<bool> TrySavingStatefulAsJson<T>(T objectToSave, AppFolder appFolder,
+        string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
+        where T : class, IStatefulAsJson, new()
     {
-        try 
+        try
         {
             var json = JsonConvert.SerializeObject(objectToSave);
-
-            if (objectToSave.StateJson == null || string.CompareOrdinal(objectToSave.StateJson, json) != 0 || forceTimestampUpdate)
-            {
-                objectToSave.Timestamp = DateTime.Now;
-                objectToSave.StateJson = json;
-
-                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-
-                await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm).ConfigureAwait(false);
-            }
-            else
-            {
-                // do nothing, file hasn't changed so it would only waste IOPS
-            }
+            if (objectToSave.StateJson != null && string.CompareOrdinal(objectToSave.StateJson, json) == 0) return true;
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm)
+                .ConfigureAwait(false);
+            objectToSave.StateJson = json;
             return true;
         }
         catch (Exception ex)
         {
             Log.Debug(ex, "Failed to save file");
         }
+
         return false;
     }
 
-    public static async Task TrySavingJson<T>(T objectToSave, AppFolder appFolder, string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
+    public static async Task<bool> TrySavingStatefulAsJsonWithTimestamp<T>(T objectToSave, AppFolder appFolder,
+        string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None,
+        bool forceTimestampUpdate = false) where T : class, IStatefulAsJsonWithTimestamp, new()
     {
-        var json = JsonConvert.SerializeObject(objectToSave);
+        try
+        {
+            var json = JsonConvert.SerializeObject(objectToSave);
+            if (objectToSave.StateJson != null && string.CompareOrdinal(objectToSave.StateJson, json) == 0 &&
+                !forceTimestampUpdate) return true;
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm)
+                .ConfigureAwait(false);
+            objectToSave.Timestamp = DateTime.Now;
+            objectToSave.StateJson = json;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to save file");
+        }
 
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-
-        await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm).ConfigureAwait(false);
+        return false;
     }
 
-    public static Task TrySavingJson<T>(T objectToSave, string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
+    public static async Task<bool> TrySavingJson<T>(T objectToSave, AppFolder appFolder, string relativePathAndFileName,
+        CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
+    {
+        try
+        {
+            var json = JsonConvert.SerializeObject(objectToSave);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm)
+                .ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to save file");
+        }
+
+        return false;
+    }
+
+    public static Task<bool> TrySavingJson<T>(T objectToSave, string relativePathAndFileName,
+        CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
         => TrySavingJson(objectToSave, AppFolder.Settings, relativePathAndFileName, compressionAlgorithm);
 
     // This function is meant to try loading a previously stored class. Else, it will get return null. 
-    public static async Task<T?> TryLoading<T>(AppFolder appFolder, string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, new()
+    public static async Task<T?> TryLoading<T>(AppFolder appFolder, string relativePathAndFileName,
+        CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, new()
     {
         try
         {
 #if NET7_0_OR_GREATER
-            await 
+            await
 #endif
-            using var stream = await FileManager.ReadFileToStreamAsync(appFolder, relativePathAndFileName).ConfigureAwait(false);
+                using var stream = await FileManager.ReadFileToStreamAsync(appFolder, relativePathAndFileName)
+                    .ConfigureAwait(false);
 
             if (stream == null)
                 return null; // file didn't exist
@@ -310,7 +358,9 @@ public static class SettingsManager
                     return JsonConvert.DeserializeObject<T>(json);
 
                 default:
-                    json = await StreamHelper.ReadFullyAsStringAsync(Compression.GetDecompressionStreamFor(stream, compressionAlgorithm)).ConfigureAwait(false);
+                    json = await StreamHelper
+                        .ReadFullyAsStringAsync(Compression.GetDecompressionStreamFor(stream, compressionAlgorithm))
+                        .ConfigureAwait(false);
                     return JsonConvert.DeserializeObject<T>(json);
             }
         }
@@ -321,18 +371,18 @@ public static class SettingsManager
         }
     }
 
-    public static async Task<ObjectAndJsonTuple<T>> TryLoadingOrGetNew<T>(AppFolder appFolder, string relativePathAndFileName) where T : class, new()
+    public static async Task<ObjectAndJsonTuple<T>> TryLoadingOrGetNew<T>(AppFolder appFolder,
+        string relativePathAndFileName) where T : class, new()
     {
         try
         {
-            var json = await FileManager.ReadFileToStringAsync(appFolder, relativePathAndFileName).ConfigureAwait(false);
-
+            var json = await FileManager.ReadFileToStringAsync(appFolder, relativePathAndFileName)
+                .ConfigureAwait(false);
             if (json != null)
                 return new ObjectAndJsonTuple<T>(JsonConvert.DeserializeObject<T>(json) ?? new T(), json);
         }
         catch (Exception ex)
         {
-            //NOT CRITICAL, IT'S A NORMAL ERROR
             Log.Debug(ex, "Failed to load or get new item from file");
         }
 
@@ -341,16 +391,24 @@ public static class SettingsManager
     }
 
     // This function is meant to try loading a previously saved class. returns saved JSON.
-    public static async Task<string> TrySaving<T>(T objectToSave, string? cachedJson, AppFolder appFolder, string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None) where T : class, new()
+    public static async Task<(bool Success, string? StoredJson)> TrySaving<T>(T objectToSave, string? cachedJson,
+        AppFolder appFolder,
+        string relativePathAndFileName, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
+        where T : class, new()
     {
-        var json = JsonConvert.SerializeObject(objectToSave);
+        try
+        {
+            var json = JsonConvert.SerializeObject(objectToSave);
+            if (cachedJson != null && string.CompareOrdinal(cachedJson, json) == 0) return (true, cachedJson);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm);
+            return (true, json);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Failed to load or get new item from file");
+        }
 
-        if (cachedJson != null && string.CompareOrdinal(cachedJson, json) == 0) return cachedJson;
-
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-
-        await FileManager.CreateFileAsyncSafe(appFolder, relativePathAndFileName, bytes, compressionAlgorithm);
-
-        return json;
+        return (false, null);
     }
 }

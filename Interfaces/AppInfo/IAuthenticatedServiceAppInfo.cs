@@ -7,12 +7,6 @@ using Windows.Web.Http;
 public interface IAuthenticatedServiceAppInfo : IServiceAppInfo
 {
     /// <summary>
-    /// If there is no SessionToken, or it expired, this will return true
-    /// </summary>
-    /// <value></value>
-    bool IsExpiredSession { get; }
-
-    /// <summary>
     /// If authentication credentials has been set, this field will reflect the type.
     /// </summary>
     AuthenticationType AuthenticationTypeSet { get; }

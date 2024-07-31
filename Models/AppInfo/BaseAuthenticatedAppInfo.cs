@@ -22,7 +22,6 @@ public class BaseAuthenticatedAppInfo : BaseServiceAppInfo, IJwtAuthenticatedSer
     private string? _elevatedJwtToken;
     private string? _appJwtToken;
     private string? _sessionJwtToken;
-    bool IAuthenticatedServiceAppInfo.IsExpiredSession => _sessionJwtToken == null;
     private string? _basicToken;
     public AuthenticationType AuthenticationTypeSet { get; private set; }
 
