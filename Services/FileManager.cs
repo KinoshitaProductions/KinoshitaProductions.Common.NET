@@ -384,15 +384,11 @@ public static class FileManager
         {
             // COULD NOT GET DIR TO SAVE PICTURES
             Log.Error(ex, "Failed to create default folders in storage");
-#if ANDROID
-            if (fallbackPath == null)
-            {
-                _notifyStorageEvent("WARNING: Cannot save pictures to selected storage device\n(folder write permissions issue?)");
-                await Initialize(picturesPath: null, fallbackPath: null);
-            }
-#endif
             if (fallbackPath != null)
             {
+#if ANDROID
+                _notifyStorageEvent("WARNING: Cannot save pictures to selected storage device\n(folder write permissions issue?)");
+#endif
                 _changeToFallbackStorage(fallbackPath);
                 await Initialize(picturesPath: fallbackPath, fallbackPath: null);
             }

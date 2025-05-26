@@ -231,7 +231,7 @@ public static class SettingsManager
     /// <typeparam name="T"></typeparam>
     /// <param name="objectToSave"></param>
     /// <returns></returns>
-    public static (bool Success, bool ChangesDetected, string? json)
+    public static (bool Success, bool ChangesDetected, string json)
         TrySavingLockedStatefulAsJsonStep1<T>(T objectToSave) where T : class, IStatefulAsJson, new()
     {
         try
@@ -245,7 +245,7 @@ public static class SettingsManager
             Log.Debug(ex, "Failed to serialize state");
         }
 
-        return (false, false, null);
+        return (false, false, string.Empty);
     }
 
     public static async Task<bool> TrySavingLockedStatefulAsJsonStep2<T>(T objectToSave, string json,
