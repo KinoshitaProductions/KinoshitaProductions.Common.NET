@@ -162,37 +162,6 @@ public static class Web
         return restResponse; //must be disposed by the invoker
     }
 
-    // it'd be nice getURLContentStream for using in-stream JSON deserialization
-    public static async Task<string> GetUrlContentV2(HttpClient httpClient, HttpRequestMessage httpRequestMessage, string serviceName, Func<string, HttpResponseMessage, string, Task>? onErrorResponseFn = null)
-    {
-        var httpRequestTask = httpClient.
-#if WINDOWS_UWP
-                    SendRequestAsync
-#else
-                    SendAsync
-#endif
-                    (httpRequestMessage, HttpCompletionOption.ResponseContentRead);
-
-        using var response = await httpRequestTask;
-        // decompress it
-        var compressionAlgorithm = GetCompressionAlgorithmForResponse(response);
-#if WINDOWS_UWP
-#if NET7_0_OR_GREATER
-        await
- #endif
-        using var stream = Compression.GetDecompressionStreamFor(await response.Content.ReadAsInputStreamAsync(), compressionAlgorithm);
-#else
-        await using var stream = Compression.GetDecompressionStreamFor(await response.Content.ReadAsStreamAsync(), compressionAlgorithm);
-#endif
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-        var responseContent = await StreamHelper.ReadFullyAsStringAsync(stream);
-        if (!response.IsSuccessStatusCode && onErrorResponseFn != null) 
-        {
-            await onErrorResponseFn.Invoke(serviceName, response, responseContent).ConfigureAwait(false);
-        }
-        return responseContent;
-    }
-
     public sealed class DisposableResponseStream : IDisposable
 #if !WINDOWS_UWP
         , IAsyncDisposable
