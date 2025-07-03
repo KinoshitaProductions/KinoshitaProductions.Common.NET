@@ -295,7 +295,7 @@ public static class FileManager
             picturesPath ??= GetPicturesPath();
             if (picturesPath == null) 
             {
-                _notifyStorageEvent("WARNING: Couldn't detect storage to save pictures");
+                _notifyStorageEvent("WARNING: Couldn't detect storage to save pictures in");
                 return;
             }
 #else
@@ -344,7 +344,7 @@ public static class FileManager
 #if ANDROID
             if (fallbackPath == null)
             {
-                _notifyStorageEvent("WARNING: Cannot save pictures to selected storage device\n(folder write permissions issue?)");
+                _notifyStorageEvent("WARNING: Cannot save pictures to selected storage device\n(folder write permissions issue? " + ex.Message + ")");
             }
 #endif
             if (fallbackPath != null)
@@ -387,7 +387,7 @@ public static class FileManager
             if (fallbackPath != null)
             {
 #if ANDROID
-                _notifyStorageEvent("WARNING: Cannot save pictures to selected storage device\n(folder write permissions issue?)");
+                _notifyStorageEvent("WARNING: Failed to create default folders in the selected storage device\n(folder write permissions issue? " + ex.Message + ")");
 #endif
                 _changeToFallbackStorage(fallbackPath);
                 await Initialize(picturesPath: fallbackPath, fallbackPath: null);
