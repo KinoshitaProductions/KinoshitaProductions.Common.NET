@@ -167,6 +167,7 @@ public static class Web
         , IAsyncDisposable
 #endif
     {
+        [Obsolete("After we've added more processes, it's better to just go and use the stream in memory for parsing (using ReadResponseBody())")]
         public async Task EnsureStreamIsSeekable()
         {
             Stream = await StreamHelper.ReadFullyAsSeekableStreamAsync(Stream).ConfigureAwait(false);
@@ -184,6 +185,16 @@ public static class Web
             Response = response;
             Stream = content ?? Stream.Null;
             IsNullStream = content == Stream.Null;
+        }
+        public string? ResponseBody
+        {
+            get;
+            private set;
+        }
+        public async Task ReadResponseBody()
+        {
+            if (ResponseBody == null && !IsNullStream)
+                ResponseBody = await StreamHelper.ReadFullyAsStringAsync(Stream);
         }
 
         public void Dispose()
@@ -211,6 +222,7 @@ public static class Web
             if (!IsNullStream)
                 await Stream.DisposeAsync();
             Response.Dispose();
+            ResponseBody = null;
         }
 #endif
         public bool IsSuccess => (int)Response.StatusCode >= 200 && (int)Response.StatusCode < 400;
