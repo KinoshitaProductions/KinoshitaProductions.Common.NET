@@ -2,7 +2,9 @@
 
 public enum AuthenticationType
 {
+    Unknown,
     None,
     Basic,
-    Jwt
+    Jwt,
+    QueryString,
 }
