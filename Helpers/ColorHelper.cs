@@ -186,6 +186,16 @@ public static class ColorHelper
                 (byte)color.G,
                 (byte)color.B);
     }
+#else
+    public static Color PlatformColorFromHexString(string hex)
+    {
+        var color = ColorFromHexString(hex);
+        return Color
+            .FromArgb((byte)color.A,
+                (byte)color.R,
+                (byte)color.G,
+                (byte)color.B);
+    }
 #endif
 
     public static (int A, int R, int G, int B)? ColorOrNullFromHexString(string hex)
