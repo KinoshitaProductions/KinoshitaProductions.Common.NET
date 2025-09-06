@@ -59,7 +59,7 @@ public class BaseAuthenticatedAppInfo : BaseServiceAppInfo, IJwtAuthenticatedSer
         // check that the request is either heading to the proper domain or a subdomain within it
         if (requestUri.Host != SiteUri.Host && !requestUri.Host.EndsWith($"." + SiteUri.Host))
         {
-            // try an even more difficult example, remove the subdomain word and check if it matches the target
+            // if still didn't match, remove the subdomain word and check if it matches the target
             var domainComponents = requestUri.Host.Split(".");
             var topDomain = requestUri.Host.Substring(domainComponents[0].Length + 1);
             if (domainComponents.Length < 3 || !(SiteUri.Host.EndsWith(topDomain) && (SiteUri.Host.Length <= topDomain.Length 
@@ -75,17 +75,13 @@ public class BaseAuthenticatedAppInfo : BaseServiceAppInfo, IJwtAuthenticatedSer
             throw new AuthenticationException("No authentication credentials set, unable to create authenticated request.");
         }
     }
-    private string GetJwtTokenForKind(JwtTokenKind jwtTokenKind) {
-        switch (jwtTokenKind) {
-            case JwtTokenKind.Elevated:
-            return _elevatedJwtToken ?? string.Empty;
-            case JwtTokenKind.App:
-            return _appJwtToken ?? string.Empty;
-            case JwtTokenKind.Session:
-            return _sessionJwtToken ?? string.Empty;
-        }
-        return string.Empty;
-    }
+    private string? GetJwtTokenOfKind(JwtTokenKind jwtTokenKind) => 
+        jwtTokenKind switch {
+            JwtTokenKind.Elevated => _elevatedJwtToken,
+            JwtTokenKind.App => _appJwtToken,
+            JwtTokenKind.Session => _sessionJwtToken,
+            _ => null
+        };
     private void SetAuthenticationHeaders(HttpRequestMessage requestMessage, JwtTokenKind jwtTokenKind)
     {
         requestMessage.Headers.UserAgent.Clear();
@@ -103,7 +99,9 @@ public class BaseAuthenticatedAppInfo : BaseServiceAppInfo, IJwtAuthenticatedSer
                 }
                 break;
             case AuthenticationType.Jwt:
-                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", GetJwtTokenForKind(jwtTokenKind));
+                var jwtToken = GetJwtTokenOfKind(jwtTokenKind);
+                if (jwtToken != null)
+                    requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
                 break;
         }
     }
@@ -151,7 +149,7 @@ public class BaseAuthenticatedAppInfo : BaseServiceAppInfo, IJwtAuthenticatedSer
         AuthenticationTypeSet = AuthenticationType.Basic;
     }
   
-    public void SetJwtAuthenticationCredentials(string? elevatedToken, string appToken, string? sessionToken)
+    public void SetJwtAuthenticationCredentials(string? elevatedToken, string? appToken, string? sessionToken)
     {
         _elevatedJwtToken = elevatedToken;
         _appJwtToken = appToken;
