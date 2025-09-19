@@ -167,8 +167,7 @@ public static class Web
         , IAsyncDisposable
 #endif
     {
-        [Obsolete("After we've added more processes, it's better to just go and use the stream in memory for parsing (using ReadResponseBody())")]
-        public async Task EnsureStreamIsSeekable()
+        public async Task EnsureStreamIsSeekableAsync()
         {
             Stream = await StreamHelper.ReadFullyAsSeekableStreamAsync(Stream).ConfigureAwait(false);
         }
@@ -191,10 +190,18 @@ public static class Web
             get;
             private set;
         }
-        public async Task ReadResponseBody()
+        public async Task ReadResponseBodyAsync(Func<string, string>? applyTransforms = null)
         {
             if (ResponseBody == null && !IsNullStream)
-                ResponseBody = await StreamHelper.ReadFullyAsStringAsync(Stream);
+            {
+                var body = await StreamHelper.ReadFullyAsStringAsync(Stream);
+                if (!string.IsNullOrWhiteSpace(body) && applyTransforms != null) body = applyTransforms(body);
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    ResponseBody = body;
+                    Stream = new MemoryStream(Encoding.UTF8.GetBytes(body));
+                }
+            }
         }
 
         public void Dispose()
@@ -253,7 +260,7 @@ public static class Web
         }
         catch
         {
-            response?.Dispose();
+            response?.Dispose(); // to be improved: in the case of DNS issues, e.g. a domain resolving to 0.0.0.0, this does not print the DNS issue
             if (responseContent != null)
             {
 #if NET7_0_OR_GREATER
@@ -280,8 +287,7 @@ public static class Web
         await
 #endif
         using var jsonTextReader = new JsonTextReader(streamReader);
-        var jsonSerializer = new JsonSerializer();
-        return jsonSerializer.Deserialize<T>(jsonTextReader);
+        return JsonSerializer.Deserialize<T>(jsonTextReader);
     }
 
     public static async Task<RestResponse<string>> ResolveRequestAsStringRestResponse(HttpClient httpClient, HttpRequestMessage httpRequestMessage)
@@ -290,9 +296,9 @@ public static class Web
         await 
 #endif
         using var drs = await GetUrlContentStreamV2(httpClient, httpRequestMessage);
-        await drs.EnsureStreamIsSeekable().ConfigureAwait(false);
         if (!drs.IsNullStream)
         {
+            //await drs.ReadResponseBodyAsync().ConfigureAwait(false);
             using var streamReader = new StreamReader(drs.Stream);
 #if NET7_0_OR_GREATER
             await 
@@ -301,8 +307,7 @@ public static class Web
             // compatibility with old format
             try
             {
-                var jsonSerializer = new JsonSerializer();
-                var response = jsonSerializer.Deserialize<RestResponse<string>>(jsonTextReader);
+                var response = JsonSerializer.Deserialize<RestResponse<string>>(jsonTextReader);
                 if (response != null && (int)response.Status != 0)
                     return response;
             }
@@ -335,19 +340,17 @@ public static class Web
             Status = drs.Response.StatusCode
         };
     }
-    
+    private static readonly JsonSerializer JsonSerializer = new ();
     public static async Task<RestResponse<T>> ResolveRequestAsRestResponse<T>(HttpClient httpClient, HttpRequestMessage httpRequestMessage) where T : class, new()
     {
 #if !WINDOWS_UWP
         await 
 #endif 
         using var drs = await GetUrlContentStreamV2(httpClient, httpRequestMessage);
-        await drs.EnsureStreamIsSeekable().ConfigureAwait(false);
-
-        // compatibility with old format
-        var jsonSerializer = new JsonSerializer();
         if (!drs.IsNullStream)
         {
+            //await drs.EnsureStreamIsSeekableAsync().ConfigureAwait(false);
+            // compatibility with old format
             using var streamReader1 = new StreamReader(drs.Stream);
 #if NET7_0_OR_GREATER
             await
@@ -356,7 +359,7 @@ public static class Web
             Exception? firstException = null;
             try
             {
-                var response = jsonSerializer.Deserialize<RestResponse<T>>(jsonTextReader1);
+                var response = JsonSerializer.Deserialize<RestResponse<T>>(jsonTextReader1);
                 if (response != null && (int)response.Status != 0)
                     return response;
             }
@@ -383,7 +386,7 @@ public static class Web
                 return new RestResponse<T>
                 {
                     Status = drs.Response.StatusCode,
-                    Result = jsonSerializer.Deserialize<T>(jsonTextReader2),
+                    Result = JsonSerializer.Deserialize<T>(jsonTextReader2),
                 };
             }
             catch(Exception ex)
@@ -405,9 +408,9 @@ public static class Web
         await 
 #endif
         using var drs = await GetUrlContentStreamV2(httpClient, httpRequestMessage);
-        await drs.EnsureStreamIsSeekable().ConfigureAwait(false);
         if (!drs.IsNullStream)
         {
+            //await drs.EnsureStreamIsSeekableAsync().ConfigureAwait(false);
             using var streamReader = new StreamReader(drs.Stream);
 #if NET7_0_OR_GREATER
             await 
@@ -416,8 +419,7 @@ public static class Web
             // compatibility with old format
             try
             {
-                var jsonSerializer = new JsonSerializer();
-                var response = jsonSerializer.Deserialize<RestResponse>(jsonTextReader);
+                var response = JsonSerializer.Deserialize<RestResponse>(jsonTextReader);
                 if (response != null && (int)response.Status != 0)
                     return response;
             }
@@ -601,8 +603,6 @@ public static class Web
         await
 #endif
         using var jsonTextReader = new JsonTextReader(streamReader);
-        var jsonSerializer = new JsonSerializer();
-
-        return jsonSerializer.Deserialize<T>(jsonTextReader);
+        return JsonSerializer.Deserialize<T>(jsonTextReader);
     }
 }
