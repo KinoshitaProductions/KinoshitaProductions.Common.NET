@@ -171,6 +171,8 @@ public static class Web
         {
             Stream = await StreamHelper.ReadFullyAsSeekableStreamAsync(Stream).ConfigureAwait(false);
         }
+
+        public HttpRequestMessage Request { get; private set; }
         public HttpResponseMessage Response { get; private set; }
         public Stream Stream
         {
@@ -179,8 +181,9 @@ public static class Web
         }
 
         internal readonly bool IsNullStream;
-        public DisposableResponseStream(HttpResponseMessage response, Stream? content = null)
+        public DisposableResponseStream(HttpRequestMessage request, HttpResponseMessage response, Stream? content = null)
         {
+            Request = request;
             Response = response;
             Stream = content ?? Stream.Null;
             IsNullStream = content == Stream.Null;
@@ -190,12 +193,12 @@ public static class Web
             get;
             private set;
         }
-        public async Task ReadResponseBodyAsync(Func<string, string>? applyTransforms = null)
+        public async Task ReadResponseBodyAsync(Func<HttpRequestMessage, HttpResponseMessage, string, string>? applyTransforms = null)
         {
             if (ResponseBody == null && !IsNullStream)
             {
                 var body = await StreamHelper.ReadFullyAsStringAsync(Stream);
-                if (!string.IsNullOrWhiteSpace(body) && applyTransforms != null) body = applyTransforms(body);
+                if (!string.IsNullOrWhiteSpace(body) && applyTransforms != null) body = applyTransforms(Request, Response, body);
                 if (!string.IsNullOrWhiteSpace(body))
                 {
                     ResponseBody = body;
@@ -213,6 +216,7 @@ public static class Web
         {
             if (disposing)
             {
+                Request = null!;
                 if (!IsNullStream)
                     Stream.Dispose();
                 Response.Dispose();
@@ -230,6 +234,7 @@ public static class Web
                 await Stream.DisposeAsync();
             Response.Dispose();
             ResponseBody = null;
+            Request = null!;
         }
 #endif
         public bool IsSuccess => (int)Response.StatusCode >= 200 && (int)Response.StatusCode < 400;
@@ -271,7 +276,7 @@ public static class Web
             }
             throw;
         }
-        return new DisposableResponseStream(response, responseContent);
+        return new DisposableResponseStream(httpRequestMessage, response, responseContent);
     }
 
     public static async Task<T?> GetUrlJsonAs<T>(HttpClient httpClient, HttpRequestMessage httpRequestMessage) where T : class, new()
@@ -452,45 +457,22 @@ public static class Web
             Status = drs.Response.StatusCode
         };
     }
-
-    [Obsolete("This is a legacy implementation which shouldn't be used anymore")]
-    public static async Task<DisposableResponseStream> PostItemToUrl<T>(Uri uri, T item, bool decompress = true)
+    
+    public static Task<DisposableResponseStream> PostItemToUrl<T>(Uri requestUri, T item)
     {
         var json = JsonConvert.SerializeObject(item);
-        var httpClient = GetNewHttpClient(); // this is a bad practice, but won't get fixed as this code should be deleted instead
-#if WINDOWS_UWP
-        var httpRequestTask = httpClient.PostAsync(uri, new HttpStringContent(json, Windows.Storage.Streams.UnicodeEncoding.Utf8, "application/json"));
-#else
-        var httpRequestTask = httpClient.PostAsync(uri, new StringContent(json, Encoding.UTF8, "application/json"));
-#endif
-        HttpResponseMessage? response = null;
-        Stream? responseContent = null;
-        try
+        var httpClient = GetNewHttpClient();
+        var requestMessage = new HttpRequestMessage
         {
-            response = await httpRequestTask;
-            // decompress it
-            var compressionAlgorithm = decompress ? GetCompressionAlgorithmForResponse(response) : CompressionAlgorithm.None;
+            Method = HttpMethod.Post,
+            RequestUri = requestUri,
 #if WINDOWS_UWP
-            var stream = Compression.GetDecompressionStreamFor(new BufferedStream((await response.Content.ReadAsInputStreamAsync()).AsStreamForRead(), 16 * 1024), compressionAlgorithm);
+            Content = new HttpStringContent(json, Windows.Storage.Streams.UnicodeEncoding.Utf8, "application/json"),
 #else
-            var stream = Compression.GetDecompressionStreamFor(new BufferedStream(await response.Content.ReadAsStreamAsync(), 16 * 1024), compressionAlgorithm);
+            Content = new StringContent(json, Encoding.UTF8, "application/json"),
 #endif
-            responseContent = stream;
-        }
-        catch
-        {
-            response?.Dispose();
-            if (responseContent != null)
-            {
-#if NET7_0_OR_GREATER
-                await responseContent.DisposeAsync();
-#else 
-                responseContent.Dispose();
-#endif
-            }
-            throw;
-        }
-        return new DisposableResponseStream(response, responseContent);
+        };
+        return GetUrlContentStreamV2(httpClient, requestMessage);
     }
 
     public static CompressionAlgorithm GetCompressionAlgorithmForResponse(HttpResponseMessage response)
@@ -588,7 +570,7 @@ public static class Web
             }
             throw;
         }
-        return new DisposableResponseStream(response, responseContent);
+        return new DisposableResponseStream(request, response, responseContent);
     }
 
     public static async Task<T?> ResolveHttpRequestAndParseJson<T>(HttpClient httpClient, HttpRequestMessage httpRequestMessage) where T : class, new()
